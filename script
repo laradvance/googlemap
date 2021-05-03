@@ -1,0 +1,72 @@
+/ The cache key for "New York" and "new york  " should be same
+const md5 = (key = "") => {
+  const code = key.toLowerCase().replace(/\s/g, "");
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, key)
+    .map((char) => (char + 256).toString(16).slice(-2))
+    .join("");
+};
+
+const getCache = (key) => {
+  return CacheService.getDocumentCache().get(md5(key));
+};
+
+// Store the results for 1 years
+const setCache = (key, value) => {
+  const expirationInSeconds = 365 * 24 * 60 * 60;
+  CacheService.getDocumentCache().put(md5(key), value, expirationInSeconds);
+};
+
+
+
+
+function JARAK(start_latitude, start_longitude, end_latitude, end_longitude){
+  const key = ["jarak", start_latitude, start_longitude, end_latitude, end_longitude].join(",");
+  // Is result in the internal cache?
+  const value = getCache(key);
+  // If yes, serve the cached result
+  if (value !== null) return value;
+
+  var mapObj = Maps.newDirectionFinder();
+  mapObj.setOrigin(start_latitude, start_longitude);
+  mapObj.setDestination(end_latitude, end_longitude);
+  mapOBJ.setMode(Maps.DirectionFinder.Mode.DRIVING);
+  Utilities.sleep(1500);
+  var directions = mapObj.getDirections();  
+  var getTheLeg = directions["routes"][0]["legs"][0];  
+  var meters = getTheLeg["distance"]["value"];
+  setCache(key, meters/1000);
+  return meters/1000;
+  
+}
+
+function WAKTU(start_latitude, start_longitude, end_latitude, end_longitude){
+  const key = ["waktu", start_latitude, start_longitude, end_latitude, end_longitude].join(",");
+  // Is result in the internal cache?
+  const value = getCache(key);
+  // If yes, serve the cached result
+  if (value !== null) return value;
+
+  var mapObj = Maps.newDirectionFinder();
+  mapObj.setOrigin(start_latitude, start_longitude);
+  mapObj.setDestination(end_latitude, end_longitude);
+  mapOBJ.setMode(Maps.DirectionFinder.Mode.DRIVING);
+  Utilities.sleep(1500);
+  var directions = mapObj.getDirections();  
+  var getTheLeg = directions["routes"][0]["legs"][0];     
+  var duration = getTheLeg["duration"]["value"];
+  setCache(key, duration / 60);
+  return duration / 60;    
+}
+
+function KETINGGIAN (latitude, longitude) {
+  const key = ["ketinggian", latitude, longitude].join(",");
+  // Is result in the internal cache?
+  const value = getCache(key);
+  // If yes, serve the cached result
+  if (value !== null) return value;
+
+  var mapObj = Maps.newElevationSampler();
+  var data = mapObj.sampleLocation(latitude, longitude);
+  setCache(key, data.results[0].elevation);
+  return data.results[0].elevation;
+}
